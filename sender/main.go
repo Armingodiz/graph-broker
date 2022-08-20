@@ -53,6 +53,7 @@ func main() {
 }
 
 func worker(conn *net.TCPConn, dataRound, id int, errChan chan error) {
+	defer conn.Close()
 	for i := 0; i < 1000; i++ {
 		data := Data{
 			Round:   dataRound,

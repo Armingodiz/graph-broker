@@ -17,14 +17,14 @@ import (
 func main() {
 	network := os.Getenv("SERVER_NETWORK")
 	port := os.Getenv("SERVER_PORT")
-	consumerNetwork := os.Getenv("CONSUMER_NETWORK")
-	consumerPort := os.Getenv("CONSUMER_PORT")
 	if network == "" {
 		network = "tcp"
 	}
 	if port == "" {
 		port = ":80"
 	}
+	consumerNetwork := os.Getenv("CONSUMER_NETWORK")
+	consumerPort := os.Getenv("CONSUMER_PORT")
 	if consumerNetwork == "" {
 		consumerNetwork = "tcp"
 	}
@@ -125,6 +125,7 @@ func (dt *DataHandler) handleRetriers(retryChan chan []*models.Data, errCchan ch
 		if err != nil {
 			errCchan <- err
 		}
+		fmt.Println("TSSSSSsss")
 		err = dt.FileService.Save(f, datas)
 		if err != nil {
 			errCchan <- err

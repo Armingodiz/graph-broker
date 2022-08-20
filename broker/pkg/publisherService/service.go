@@ -33,6 +33,7 @@ func (s *service) Send(dataChunc []*models.Data) (failedDatas []*models.Data) {
 	if err != nil {
 		return
 	}
+	defer connection.Close()
 	failedDatas = make([]*models.Data, 0)
 	for _, data := range dataChunc {
 		bytes, _ := json.Marshal(data)
