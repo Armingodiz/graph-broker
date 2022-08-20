@@ -1,0 +1,53 @@
+version: '3.2'
+services: 
+  sender:
+    build:
+      context: .
+      dockerfile: sender/Dockerfile
+    depends_on:
+      - broker
+    hostname: sender
+    working_dir: /root/
+    networks:
+      - default
+    environment:
+      - SENDER_NETWORK=tcp
+      - SENDER_ADDRESS=broker:80
+      - COUNT_WORKERS=10
+      - INTERVAL=5
+
+  broker:
+    build:
+      context: .
+      dockerfile: broker/Dockerfile
+    hostname: broker
+    working_dir: /root/
+    environment:
+      - SERVER_NETWORK=tcp
+      - SERVER_PORT=:80
+      - CONSUMER_NETWORK=tcp
+      - CONSUMER_ADDRESS=receiver:81
+    ports:
+      - '8080:8080'
+    networks:
+      - default
+
+
+  receiver:
+    build:
+      context: .
+      dockerfile: receiver/Dockerfile
+    hostname: receiver
+    working_dir: /root/
+    environment:
+      - CONSUMER_NETWORK=tcp
+      - CONSUMER_PORT=:81
+    ports:
+      - '8081:8081'
+    networks:
+      - default
+
+networks:
+  default:
+    external:
+      name: local

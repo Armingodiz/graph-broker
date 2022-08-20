@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net"
 	"os"
@@ -11,8 +10,8 @@ import (
 )
 
 func main() {
-	network := os.Getenv("SERVER_NETWORK")
-	address := os.Getenv("SERVER_ADDRESS")
+	network := os.Getenv("SENDER_NETWORK")
+	address := os.Getenv("SENDER_ADDRESS")
 	countWorkersEnv := os.Getenv("COUNT_WORKERS")
 	intervalEnv := os.Getenv("INTERVAL")
 	countWorkers, err := strconv.Atoi(countWorkersEnv)
@@ -33,13 +32,9 @@ func main() {
 	go func(dataRound int) {
 		for {
 			for i := 0; i < countWorkers; i++ {
-				tcpAddress, err := net.ResolveTCPAddr(network, address)
+				connection, err := connectToServer(network, address)
 				if err != nil {
-					return
-				}
-				connection, err := net.DialTCP(network, nil, tcpAddress)
-				if err != nil {
-					return
+					errChan <- err
 				}
 				go worker(connection, dataRound, i, errChan)
 			}
@@ -50,6 +45,14 @@ func main() {
 	for err := range errChan {
 		panic(err)
 	}
+}
+func connectToServer(network, address string) (connection *net.TCPConn, err error) {
+	tcpAddress, err := net.ResolveTCPAddr(network, address)
+	if err != nil {
+		return
+	}
+	connection, err = net.DialTCP(network, nil, tcpAddress)
+	return
 }
 
 func worker(conn *net.TCPConn, dataRound, id int, errChan chan error) {
@@ -62,7 +65,7 @@ func worker(conn *net.TCPConn, dataRound, id int, errChan chan error) {
 			Message: "test",
 		}
 		bytes, _ := json.Marshal(data)
-		fmt.Println("sending data:", string(bytes))
+		//fmt.Println("sending data:", string(bytes))
 		_, err := conn.Write([]byte(string(bytes) + "\n"))
 		if err != nil {
 			log.Println(err)

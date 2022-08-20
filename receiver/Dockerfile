@@ -5,7 +5,6 @@ ENV GO111MODULE=on
 WORKDIR /app
 
 COPY ./receiver/go.mod .
-COPY ./receiver/go.sum .
 
 RUN go mod download
 

@@ -24,12 +24,12 @@ func main() {
 		port = ":80"
 	}
 	consumerNetwork := os.Getenv("CONSUMER_NETWORK")
-	consumerPort := os.Getenv("CONSUMER_PORT")
+	ConsumerAddress := os.Getenv("CONSUMER_ADDRESS")
 	if consumerNetwork == "" {
 		consumerNetwork = "tcp"
 	}
-	if consumerPort == "" {
-		consumerPort = ":81"
+	if ConsumerAddress == "" {
+		ConsumerAddress = "localhost:81"
 	}
 	listener, err := createListener(network, port)
 	if err != nil {
@@ -40,7 +40,7 @@ func main() {
 	retryChan := make(chan []*models.Data, 10)
 	dataHandler := &DataHandler{
 		FileService:      fileService.NewService(),
-		PublisherService: publisherService.NewService(consumerNetwork, consumerPort),
+		PublisherService: publisherService.NewService(consumerNetwork, ConsumerAddress),
 	}
 	go dataHandler.handlePersistant(retryChan, errChan)
 	go func() {
@@ -100,7 +100,8 @@ func (dt *DataHandler) handleConnection(conn net.Conn, errChan chan error, retry
 			var dt models.Data
 			err = json.Unmarshal([]byte(line), &dt)
 			if err != nil {
-				errChan <- err
+				log.Println(line)
+				//errChan <- err
 			}
 			dataChunc = append(dataChunc, &dt)
 			if dt.Id == 999 {

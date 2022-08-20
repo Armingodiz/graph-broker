@@ -12,27 +12,20 @@ type Service interface {
 }
 
 type service struct {
-	ConsumerHost string
-	ConsumerPort string
+	ConsumerAddress string
+	ConsumerHost    string
 }
 
-func NewService(consumerHost, consumerPort string) Service {
+func NewService(consumerHost, consumerAddress string) Service {
 	return &service{
-		ConsumerHost: consumerHost,
-		ConsumerPort: consumerPort,
+		ConsumerAddress: consumerAddress,
+		ConsumerHost:    consumerHost,
 	}
 }
 
 func (s *service) Send(dataChunc []*models.Data) (failedDatas []*models.Data) {
 	failedDatas = dataChunc
-	tcpAddress, err := net.ResolveTCPAddr(s.ConsumerHost, s.ConsumerPort)
-	if err != nil {
-		return
-	}
-	connection, err := net.DialTCP(s.ConsumerHost, nil, tcpAddress)
-	if err != nil {
-		return
-	}
+	connection, _ := connectToServer(s.ConsumerHost, s.ConsumerAddress)
 	defer connection.Close()
 	failedDatas = make([]*models.Data, 0)
 	for _, data := range dataChunc {
@@ -44,4 +37,13 @@ func (s *service) Send(dataChunc []*models.Data) (failedDatas []*models.Data) {
 		}
 	}
 	return failedDatas
+}
+
+func connectToServer(network, address string) (connection *net.TCPConn, err error) {
+	tcpAddress, err := net.ResolveTCPAddr(network, address)
+	if err != nil {
+		return
+	}
+	connection, err = net.DialTCP(network, nil, tcpAddress)
+	return
 }

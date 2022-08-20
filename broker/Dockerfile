@@ -5,7 +5,6 @@ ENV GO111MODULE=on
 WORKDIR /app
 
 COPY ./broker/go.mod .
-COPY ./broker/go.sum .
 
 RUN go mod download
 
