@@ -17,11 +17,19 @@ import (
 func main() {
 	network := os.Getenv("SERVER_NETWORK")
 	port := os.Getenv("SERVER_PORT")
+	consumerNetwork := os.Getenv("CONSUMER_NETWORK")
+	consumerPort := os.Getenv("CONSUMER_PORT")
 	if network == "" {
 		network = "tcp"
 	}
 	if port == "" {
 		port = ":80"
+	}
+	if consumerNetwork == "" {
+		consumerNetwork = "tcp"
+	}
+	if consumerPort == "" {
+		consumerPort = ":81"
 	}
 	listener, err := createListener(network, port)
 	if err != nil {
@@ -32,7 +40,7 @@ func main() {
 	retryChan := make(chan []*models.Data, 10)
 	dataHandler := &DataHandler{
 		FileService:      fileService.NewService(),
-		PublisherService: publisherService.NewService(os.Getenv("CONSUMER_HOST"), os.Getenv("CONSUMER_PORT")),
+		PublisherService: publisherService.NewService(consumerNetwork, consumerPort),
 	}
 	go dataHandler.handlePersistant(retryChan, errChan)
 	go func() {
@@ -105,10 +113,7 @@ func (dt *DataHandler) handleConnection(conn net.Conn, errChan chan error, retry
 		}
 	}
 	fmt.Println("received " + strconv.Itoa(len(dataChunc)) + " data")
-	failedDatas, err := dt.PublisherService.Send(dataChunc)
-	if err != nil {
-		errChan <- err
-	}
+	failedDatas := dt.PublisherService.Send(dataChunc)
 	if len(failedDatas) > 0 {
 		retryChan <- failedDatas
 	}
@@ -142,10 +147,7 @@ func (dt *DataHandler) handlePersistant(retryChan chan []*models.Data, errChan c
 			errChan <- err
 		}
 		if len(datas) > 0 {
-			failedDatas, err := dt.PublisherService.Send(datas)
-			if err != nil {
-				errChan <- err
-			}
+			failedDatas := dt.PublisherService.Send(datas)
 			if len(failedDatas) > 0 {
 				retryChan <- failedDatas
 			}
