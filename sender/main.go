@@ -24,21 +24,21 @@ func main() {
 	if address == "" {
 		address = "localhost:80"
 	}
-	workerPool := make([]*worker, countWorkers)
 	errChan := make(chan error, countWorkers)
-	for i := 0; i < countWorkers; i++ {
-		worker, err := newWorker(network, address, i, errChan)
-		if err != nil {
-			panic(err)
-		}
-		workerPool[i] = worker
-	}
 	go func(dataRound int) {
 		for {
-			for _, worker := range workerPool {
-				go worker.Send(dataRound)
+			for i := 0; i < countWorkers; i++ {
+				tcpAddress, err := net.ResolveTCPAddr(network, address)
+				if err != nil {
+					return
+				}
+				connection, err := net.DialTCP(network, nil, tcpAddress)
+				if err != nil {
+					return
+				}
+				go worker(connection, dataRound, i, errChan)
 			}
-			time.Sleep(time.Minute * 5)
+			time.Sleep(time.Second * 5)
 			dataRound++
 		}
 	}(0)
@@ -47,43 +47,20 @@ func main() {
 	}
 }
 
-type worker struct {
-	Conn    *net.TCPConn
-	Id      int
-	ErrChan chan error
-}
-
-func newWorker(network, address string, id int, errChan chan error) (w *worker, err error) {
-	tcpAddress, err := net.ResolveTCPAddr(network, address)
-	if err != nil {
-		return
-	}
-	connection, err := net.DialTCP(network, nil, tcpAddress)
-	if err != nil {
-		return
-	}
-	w = &worker{
-		Conn:    connection,
-		Id:      id,
-		ErrChan: errChan,
-	}
-	return
-}
-
-func (w *worker) Send(dataRound int) {
+func worker(conn *net.TCPConn, dataRound, id int, errChan chan error) {
 	for i := 0; i < 1000; i++ {
 		data := Data{
 			Round:   dataRound,
 			Id:      i,
-			Sender:  w.Id,
+			Sender:  id,
 			Message: "test",
 		}
 		bytes, _ := json.Marshal(data)
 		fmt.Println("sending data:", string(bytes))
-		_, err := w.Conn.Write([]byte(string(bytes) + "\n"))
+		_, err := conn.Write([]byte(string(bytes) + "\n"))
 		if err != nil {
 			log.Println(err)
-			w.ErrChan <- err
+			errChan <- err
 			break
 		}
 	}
