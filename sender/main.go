@@ -14,9 +14,14 @@ func main() {
 	network := os.Getenv("SERVER_NETWORK")
 	address := os.Getenv("SERVER_ADDRESS")
 	countWorkersEnv := os.Getenv("COUNT_WORKERS")
+	intervalEnv := os.Getenv("INTERVAL")
 	countWorkers, err := strconv.Atoi(countWorkersEnv)
 	if err != nil {
 		countWorkers = 10
+	}
+	interval, err := strconv.Atoi(intervalEnv)
+	if err != nil {
+		interval = 5
 	}
 	if network == "" {
 		network = "tcp"
@@ -38,7 +43,7 @@ func main() {
 				}
 				go worker(connection, dataRound, i, errChan)
 			}
-			time.Sleep(time.Second * 5)
+			time.Sleep(time.Minute * time.Duration(interval))
 			dataRound++
 		}
 	}(0)
