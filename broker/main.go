@@ -46,7 +46,6 @@ func main() {
 		}
 	}()
 	go dataHandler.handleRetriers(retryChan, errChan)
-
 	for err := range errChan {
 		panic(err)
 	}
